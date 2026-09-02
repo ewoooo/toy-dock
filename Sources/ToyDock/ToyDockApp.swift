@@ -125,7 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         hoverExitTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(250))
+            try? await Task.sleep(for: .milliseconds(100))
             guard !Task.isCancelled, let self else { return }
             self.hoverExitTask = nil
             self.reconcileHover()
@@ -134,10 +134,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func reconcileHover() {
         guard panelState.movement == .idle, let panel else { return }
-        let interactionFrame = panel.frame.insetBy(
-            dx: widgetLayout.shadowPadding,
-            dy: widgetLayout.shadowPadding
-        )
+        let interactionFrame = panelState.presentation == .expanded
+            ? panel.frame
+            : panel.frame.insetBy(
+                dx: widgetLayout.shadowPadding,
+                dy: widgetLayout.shadowPadding
+            )
         setWidgetHovered(interactionFrame.contains(NSEvent.mouseLocation))
     }
 
@@ -163,24 +165,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func beginWidgetRepositioning() -> Bool {
-        guard let panel, let dockGeometry else { return false }
+        guard dockGeometry != nil else { return false }
 
         hoverExitTask?.cancel()
         hoverExitTask = nil
-        panelState.beginRepositioning(to: panelState.placement)
-        let compactSize = widgetLayout.panelFrame(
-            dock: dockGeometry,
-            placement: panelState.placement,
-            presentation: .compact
-        ).size
-        panel.setFrame(
-            CGRect(
-                x: panel.frame.midX - compactSize.width / 2,
-                y: panel.frame.midY - compactSize.height / 2,
-                width: compactSize.width,
-                height: compactSize.height
-            ),
-            display: true
+        panelState.beginRepositioning(
+            to: panelState.placement,
+            surfaceSize: compactSurfaceSize(for: panelState.placement)
         )
         return true
     }
@@ -201,7 +192,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     ) {
         hoverExitTask?.cancel()
         hoverExitTask = nil
-        panelState.beginRepositioning(to: placement)
+        panelState.beginRepositioning(
+            to: placement,
+            surfaceSize: compactSurfaceSize(for: placement)
+        )
         updatePanel(
             animated: false,
             spring: animated ? .spring(duration: 0.35, bounce: 0.3) : nil,
@@ -211,6 +205,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.reconcileHover()
             }
         )
+    }
+
+    private func compactSurfaceSize(for placement: WidgetPlacement) -> CGSize {
+        guard let dockGeometry else {
+            return CGSize(width: DockMetrics.fallbackSide, height: DockMetrics.fallbackSide)
+        }
+        return widgetLayout.contentFrame(
+            dock: dockGeometry,
+            placement: placement,
+            presentation: .compact
+        ).size
     }
 
     private func updatePanel(

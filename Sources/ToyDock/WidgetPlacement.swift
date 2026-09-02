@@ -1,3 +1,4 @@
+import CoreGraphics
 import Observation
 
 enum WidgetPlacement: Equatable {
@@ -87,6 +88,7 @@ final class WidgetPanelState {
     private(set) var placement = WidgetPlacement.afterDock
     private(set) var movement = WidgetMovementState.idle
     private(set) var dockEdge = DockEdge.bottom
+    private(set) var repositioningSurfaceSize: CGSize?
     func setPresentation(_ presentation: WidgetPresentation) -> Bool {
         guard movement == .idle, self.presentation != presentation else { return false }
         self.presentation = presentation
@@ -103,14 +105,16 @@ final class WidgetPanelState {
         return setPresentation(isHovered ? .expanded : .compact)
     }
 
-    func beginRepositioning(to placement: WidgetPlacement) {
+    func beginRepositioning(to placement: WidgetPlacement, surfaceSize: CGSize) {
         presentation = .compact
         self.placement = placement
         movement = .repositioning
+        repositioningSurfaceSize = surfaceSize
     }
 
     func finishRepositioning() {
         movement = .idle
+        repositioningSurfaceSize = nil
     }
 
     func updateDockEdge(_ dockEdge: DockEdge) {
@@ -121,19 +125,22 @@ final class WidgetPanelState {
         let state = WidgetPanelState()
         assert(state.setPresentation(.expanded))
 
-        state.beginRepositioning(to: .beforeDock)
+        let compactSize = CGSize(width: 80, height: 80)
+        state.beginRepositioning(to: .beforeDock, surfaceSize: compactSize)
         assert(state.presentation == .compact)
         assert(state.placement == .beforeDock)
         assert(state.movement == .repositioning)
+        assert(state.repositioningSurfaceSize == compactSize)
         assert(!state.setPresentation(.expanded))
 
         state.finishRepositioning()
+        assert(state.repositioningSurfaceSize == nil)
         assert(state.togglePresentation())
         assert(state.presentation == .expanded)
         assert(state.setHovered(false))
         assert(state.presentation == .compact)
 
-        state.beginRepositioning(to: .afterDock)
+        state.beginRepositioning(to: .afterDock, surfaceSize: compactSize)
         assert(state.presentation == .compact)
     }
 }

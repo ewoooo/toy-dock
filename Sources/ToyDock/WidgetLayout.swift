@@ -3,8 +3,9 @@ import AppKit
 enum DockMetrics {
     static let screenEdgeGap: CGFloat = 6
     static let fallbackSide: CGFloat = 64
-    static let shadowPadding: CGFloat = 16
-    static let maximumSurfaceScale: CGFloat = 1.05
+    static let shadowPadding: CGFloat = 32
+    static let expandedSurfaceScale: CGFloat = 1.05
+    static let maximumSurfaceScale: CGFloat = 1.1
     static let estimatedLengthRatio: CGFloat = 0.26
 
     static func widgetSide(occupiedInset: CGFloat) -> CGFloat {
@@ -15,6 +16,7 @@ enum DockMetrics {
     static func selfCheck() {
         assert(widgetSide(occupiedInset: 86) == 80)
         assert(widgetSide(occupiedInset: 0) == fallbackSide)
+        assert(expandedSurfaceScale < maximumSurfaceScale)
     }
 }
 
