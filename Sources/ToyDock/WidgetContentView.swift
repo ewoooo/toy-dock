@@ -121,6 +121,7 @@ private struct WidgetSurfaceView: View {
                         height: direction.handleHitSize(in: proxy.size).height
                     )
                     .contentShape(Rectangle())
+                    .pointerStyle(isPanelDragging ? .grabActive : .grabIdle)
                     .offset(
                         direction.handleOffset(
                             in: proxy.size,
@@ -174,34 +175,42 @@ private struct WidgetContentProbe: View {
     let origin: WidgetCorner
 
     var body: some View {
-        ZStack {
-            switch presentation {
-            case .compact:
-                label("COMPACT")
-            case .expanded:
-                label("EXPANDED")
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: origin.alignment) {
-            Circle()
-                .fill(.pink)
-                .overlay {
-                    Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1)
+        GeometryReader { proxy in
+            let originOffset = CGSize(
+                width: (origin.isLeft ? -1 : 1) * proxy.size.width / 2,
+                height: (origin.isTop ? -1 : 1) * proxy.size.height / 2
+            )
+
+            ZStack {
+                switch presentation {
+                case .compact:
+                    label("COMPACT", from: originOffset)
+                case .expanded:
+                    label("EXPANDED", from: originOffset)
                 }
-                .frame(width: 8, height: 8)
-                .padding(10)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: origin.alignment) {
+                Circle()
+                    .fill(.pink)
+                    .overlay {
+                        Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1)
+                    }
+                    .frame(width: 8, height: 8)
+                    .padding(10)
+            }
         }
         .animation(.spring(duration: 0.2, bounce: 0.2), value: presentation)
         .allowsHitTesting(false)
     }
 
-    private func label(_ text: String) -> some View {
+    private func label(_ text: String, from originOffset: CGSize) -> some View {
         Text(text)
             .font(.system(size: 12, weight: .semibold, design: .rounded))
             .foregroundStyle(.white.opacity(0.8))
             .transition(
-                .scale(scale: 0.7, anchor: origin.unitPoint)
+                .offset(x: originOffset.width, y: originOffset.height)
+                    .combined(with: .scale(scale: 0.7, anchor: origin.unitPoint))
                     .combined(with: .opacity)
             )
     }

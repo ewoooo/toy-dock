@@ -96,13 +96,11 @@ struct WidgetLayout {
         let expandedDepth = side * expandedDepthMultiplier
         let size: CGSize
 
-        switch (dock.edge, presentation) {
-        case (_, .compact):
+        switch presentation {
+        case .compact:
             size = CGSize(width: side, height: side)
-        case (.bottom, .expanded):
+        case .expanded:
             size = CGSize(width: expandedLength, height: expandedDepth)
-        case (.left, .expanded), (.right, .expanded):
-            size = CGSize(width: expandedDepth, height: expandedLength)
         }
 
         let dockFrame = dock.frame.insetBy(
@@ -199,9 +197,9 @@ struct WidgetLayout {
             placement: .afterDock,
             presentation: .expanded
         )
-        assert(upExpanded.minX == 6 && upExpanded.minY == 410 && upExpanded.height == 160)
-        assert(abs(upExpanded.width - 112) < 0.001)
-        assert(downExpanded.maxY == 90 && downExpanded.height == 160)
+        assert(upExpanded.minX == 6 && upExpanded.minY == 410 && upExpanded.width == 160)
+        assert(abs(upExpanded.height - 112) < 0.001)
+        assert(downExpanded.maxY == 90 && downExpanded.width == 160)
 
         let rightDock = DockGeometry(
             edge: .right,
